@@ -1,0 +1,54 @@
+# ── Secrets & credentials ─────────────────────────────────────────────────────
+.env
+*.pem
+*.key
+
+# ── Personal / private files ───────────────────────────────────────────────────
+my_cv.pdf
+media/cvs/
+speaking_script.md
+
+# ── Generated output files ─────────────────────────────────────────────────────
+*.csv
+*_ai_report.txt
+media/
+
+# ── Django ─────────────────────────────────────────────────────────────────────
+db.sqlite3
+db.sqlite3-journal
+*.log
+staticfiles/
+local_settings.py
+
+# ── Python ─────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+
+# ── Virtual environments ────────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+ENV/
+
+# ── macOS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── IDEs ───────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Claude Code internal ───────────────────────────────────────────────────────
+.claude/

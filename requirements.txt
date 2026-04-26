@@ -1,0 +1,7 @@
+django>=4.2
+requests
+pandas
+pdfplumber
+openai
+python-dotenv
+markdown

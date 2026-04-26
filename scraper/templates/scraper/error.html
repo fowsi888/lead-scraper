@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Error — FOMAD Leads</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root { --bg:#080c14;--card:rgba(13,18,30,.85);--border:rgba(255,255,255,.07);--red:#f87171;--text:#e8edf5;--muted2:#94a3b8; }
+    * { margin:0;padding:0;box-sizing:border-box; }
+    body { background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px; }
+    .card { background:var(--card);border:1px solid rgba(248,113,113,.2);border-radius:20px;padding:48px;max-width:600px;width:100%;text-align:center; }
+    .icon { font-size:56px;margin-bottom:20px; }
+    h1 { font-size:24px;font-weight:800;margin-bottom:8px;color:var(--red); }
+    p { color:var(--muted2);font-size:15px;margin-bottom:24px;line-height:1.65; }
+    .error-detail { background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.15);border-radius:10px;padding:16px;text-align:left;font-size:12px;font-family:monospace;color:var(--red);margin-bottom:28px;max-height:200px;overflow:auto;white-space:pre-wrap; }
+    a { display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#2979ff,#a78bfa);border:none;border-radius:10px;padding:12px 24px;color:white;font-size:14px;font-weight:600;text-decoration:none;transition:all .2s; }
+    a:hover { transform:translateY(-2px);box-shadow:0 8px 24px rgba(79,158,255,.35); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">⚠️</div>
+    <h1>Scraping Failed</h1>
+    <p>An error occurred while processing your request for <strong>{{ job.search_term }}</strong> in <strong>{{ job.country }}</strong>.</p>
+    {% if job.error_message %}
+    <div class="error-detail">{{ job.error_message }}</div>
+    {% else %}
+    <div class="error-detail">{{ job.progress_message }}</div>
+    {% endif %}
+    <a href="{% url 'home' %}"><i class="fas fa-arrow-left"></i> Try Again</a>
+  </div>
+</body>
+</html>

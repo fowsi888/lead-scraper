@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scraping in Progress — FOMAD Leads</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080c14;
+      --card: rgba(13,18,30,0.9);
+      --border: rgba(255,255,255,0.07);
+      --blue: #4f9eff;
+      --blue2: #2979ff;
+      --purple: #a78bfa;
+      --green: #34d399;
+      --orange: #fbbf24;
+      --red: #f87171;
+      --text: #e8edf5;
+      --muted: #64748b;
+      --muted2: #94a3b8;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+    }
+    .blob { position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0; }
+    .blob-1 { width:500px;height:500px;background:rgba(79,158,255,0.06);top:-100px;left:-100px; }
+    .blob-2 { width:400px;height:400px;background:rgba(167,139,250,0.06);bottom:-100px;right:-80px; }
+
+    nav {
+      position:sticky;top:0;z-index:100;
+      background:rgba(8,12,20,0.85);backdrop-filter:blur(20px);
+      border-bottom:1px solid var(--border);
+      padding:0 32px;height:60px;
+      display:flex;align-items:center;
+    }
+    .nav-inner { max-width:900px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between; }
+    .logo { font-size:20px;font-weight:800;
+      background:linear-gradient(135deg,var(--blue),var(--purple));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+    .job-meta { font-size:13px;color:var(--muted2); }
+    .job-meta strong { color:var(--text); }
+
+    main { flex:1;position:relative;z-index:1;padding:40px 24px 80px; }
+    .container { max-width:780px;margin:0 auto; }
+
+    /* Progress header */
+    .prog-header { text-align:center;margin-bottom:40px; }
+    .status-badge {
+      display:inline-flex;align-items:center;gap:8px;
+      border-radius:50px;padding:6px 18px;margin-bottom:20px;
+      font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+      background:rgba(79,158,255,0.12);border:1px solid rgba(79,158,255,0.25);color:var(--blue);
+      transition:all 0.4s;
+    }
+    .status-badge.complete { background:rgba(52,211,153,0.12);border-color:rgba(52,211,153,0.25);color:var(--green); }
+    .status-badge.error { background:rgba(248,113,113,0.12);border-color:rgba(248,113,113,0.25);color:var(--red); }
+    .spinner {
+      width:14px;height:14px;border:2px solid rgba(79,158,255,0.3);
+      border-top-color:var(--blue);border-radius:50%;
+      animation:spin 0.8s linear infinite;
+    }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .check { color:var(--green);font-size:14px; }
+    .status-badge.error .spinner { display:none; }
+    .prog-title { font-size:26px;font-weight:800;margin-bottom:8px;letter-spacing:-0.5px; }
+    .prog-sub { font-size:14px;color:var(--muted2); }
+
+    /* Steps */
+    .steps { display:flex;align-items:center;justify-content:center;margin-bottom:36px;gap:0;position:relative; }
+    .step {
+      display:flex;flex-direction:column;align-items:center;gap:8px;
+      position:relative;z-index:1;flex:1;max-width:140px;
+    }
+    .step-circle {
+      width:44px;height:44px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:14px;font-weight:700;
+      background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.08);
+      color:var(--muted);transition:all 0.4s ease;position:relative;
+    }
+    .step-circle.active {
+      background:linear-gradient(135deg,var(--blue2),var(--purple));border-color:transparent;
+      color:white;box-shadow:0 0 24px rgba(79,158,255,0.5);
+    }
+    .step-circle.active::after {
+      content:'';position:absolute;width:54px;height:54px;border-radius:50%;
+      border:2px solid rgba(79,158,255,0.3);
+      animation:ripple 1.5s ease-out infinite;
+    }
+    @keyframes ripple { 0%{transform:scale(0.8);opacity:1} 100%{transform:scale(1.4);opacity:0} }
+    .step-circle.done {
+      background:rgba(52,211,153,0.15);border-color:var(--green);color:var(--green);
+    }
+    .step-label { font-size:11px;color:var(--muted);text-align:center;font-weight:500;transition:color 0.3s; }
+    .step.active .step-label,.step.done .step-label { color:var(--text); }
+    .step-connector {
+      flex:1;max-width:80px;height:2px;
+      background:rgba(255,255,255,0.06);margin-bottom:24px;
+      transition:background 0.4s;
+    }
+    .step-connector.done { background:var(--green); }
+    .step-connector.active {
+      background:linear-gradient(90deg,var(--green),rgba(79,158,255,0.4));
+    }
+
+    /* Big percentage */
+    .progress-ring-wrap {
+      display:flex;align-items:center;justify-content:center;margin-bottom:28px;position:relative;
+    }
+    .ring-svg { transform:rotate(-90deg); }
+    .ring-bg { fill:none;stroke:rgba(255,255,255,0.05);stroke-width:6; }
+    .ring-fill { fill:none;stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset 0.6s ease; }
+    .ring-text {
+      position:absolute;text-align:center;
+      font-size:36px;font-weight:900;
+      background:linear-gradient(135deg,var(--blue),var(--purple));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+    .ring-text span { display:block;font-size:12px;font-weight:500;color:var(--muted2);
+      -webkit-text-fill-color:var(--muted2);margin-top:2px; }
+
+    /* Progress bar */
+    .prog-bar-wrap {
+      background:rgba(255,255,255,0.05);border-radius:100px;height:8px;
+      overflow:hidden;margin-bottom:16px;
+    }
+    .prog-bar {
+      height:100%;border-radius:100px;
+      background:linear-gradient(90deg,var(--blue2),var(--purple));
+      transition:width 0.6s ease;position:relative;overflow:hidden;
+    }
+    .prog-bar::after {
+      content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent);
+      animation:barShimmer 1.5s ease-in-out infinite;
+    }
+    @keyframes barShimmer { to{left:200%;} }
+    .prog-message { font-size:14px;color:var(--muted2);text-align:center;min-height:20px;transition:all 0.3s; }
+
+    /* Stats row */
+    .stats-row {
+      display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;
+    }
+    .stat-card {
+      background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;
+      padding:16px 20px;text-align:center;transition:all 0.3s;
+    }
+    .stat-num { font-size:28px;font-weight:800;
+      background:linear-gradient(135deg,var(--blue),var(--purple));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+    .stat-label { font-size:12px;color:var(--muted2);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px; }
+
+    /* Terminal log */
+    .log-card {
+      background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:16px;overflow:hidden;
+    }
+    .log-header {
+      padding:14px 20px;border-bottom:1px solid var(--border);
+      display:flex;align-items:center;gap:10px;
+      background:rgba(255,255,255,0.02);
+    }
+    .log-dots { display:flex;gap:6px; }
+    .log-dot { width:12px;height:12px;border-radius:50%; }
+    .log-dot:nth-child(1) { background:#ff5f57; }
+    .log-dot:nth-child(2) { background:#febc2e; }
+    .log-dot:nth-child(3) { background:#28c840; }
+    .log-title { font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted2);margin-left:8px; }
+    .log-body {
+      padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:12.5px;
+      height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;
+    }
+    .log-body::-webkit-scrollbar { width:4px; }
+    .log-body::-webkit-scrollbar-track { background:transparent; }
+    .log-body::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1);border-radius:2px; }
+    .log-line { display:flex;gap:12px;align-items:flex-start;animation:fadeLog 0.3s ease; }
+    @keyframes fadeLog { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+    .log-time { color:var(--muted);flex-shrink:0; }
+    .log-msg { color:var(--muted2); }
+    .log-msg.info { color:#7dd3fc; }
+    .log-msg.success { color:var(--green); }
+    .log-msg.error { color:var(--red); }
+    .log-cursor { display:inline-block;width:8px;height:14px;background:var(--blue);
+      animation:blink 1s step-start infinite;vertical-align:middle;margin-left:4px; }
+    @keyframes blink { 50%{opacity:0} }
+
+    /* Redirect overlay */
+    .redirect-overlay {
+      display:none;position:fixed;inset:0;z-index:200;
+      background:rgba(8,12,20,0.92);backdrop-filter:blur(12px);
+      flex-direction:column;align-items:center;justify-content:center;gap:20px;
+    }
+    .redirect-overlay.show { display:flex; }
+    .redirect-icon { font-size:64px;animation:bounceIn 0.5s ease; }
+    @keyframes bounceIn { 0%{transform:scale(0)} 60%{transform:scale(1.2)} 100%{transform:scale(1)} }
+    .redirect-text { font-size:22px;font-weight:700; }
+    .redirect-sub { font-size:14px;color:var(--muted2); }
+    .redirect-bar { width:200px;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden; }
+    .redirect-fill { height:100%;background:linear-gradient(90deg,var(--blue2),var(--purple));
+      border-radius:2px;animation:fillBar 2s linear forwards; }
+    @keyframes fillBar { from{width:0%} to{width:100%} }
+  </style>
+</head>
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <nav>
+    <div class="nav-inner">
+      <div class="logo">FOMAD Leads</div>
+      <div class="job-meta">
+        <strong>{{ job.search_term }}</strong> in <strong>{{ job.country }}</strong>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+
+      <div class="prog-header">
+        <div class="status-badge" id="statusBadge">
+          <div class="spinner" id="spinner"></div>
+          <span id="statusText">Initialising...</span>
+        </div>
+        <div class="prog-title">Scraping &amp; Analysing Leads</div>
+        <div class="prog-sub">Sit back — this takes 1–3 minutes depending on results count</div>
+      </div>
+
+      <!-- Step progress -->
+      <div class="steps" id="stepsRow">
+        <div class="step" id="step-1">
+          <div class="step-circle" id="sc-1">1</div>
+          <div class="step-label">Maps Search</div>
+        </div>
+        <div class="step-connector" id="conn-1"></div>
+        <div class="step" id="step-2">
+          <div class="step-circle" id="sc-2">2</div>
+          <div class="step-label">Details</div>
+        </div>
+        <div class="step-connector" id="conn-2"></div>
+        <div class="step" id="step-3">
+          <div class="step-circle" id="sc-3">3</div>
+          <div class="step-label">Clean Data</div>
+        </div>
+        <div class="step-connector" id="conn-3"></div>
+        <div class="step" id="step-4">
+          <div class="step-circle" id="sc-4">4</div>
+          <div class="step-label">Read CV</div>
+        </div>
+        <div class="step-connector" id="conn-4"></div>
+        <div class="step" id="step-5">
+          <div class="step-circle" id="sc-5">5</div>
+          <div class="step-label">AI Match</div>
+        </div>
+      </div>
+
+      <!-- Ring + bar -->
+      <div class="progress-ring-wrap">
+        <svg class="ring-svg" width="160" height="160" viewBox="0 0 160 160">
+          <circle class="ring-bg" cx="80" cy="80" r="68"/>
+          <circle class="ring-fill" id="ringFill" cx="80" cy="80" r="68"
+                  stroke="url(#ringGrad)"
+                  stroke-dasharray="427.3"
+                  stroke-dashoffset="427.3"/>
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#2979ff"/>
+              <stop offset="100%" stop-color="#a78bfa"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="ring-text"><span id="pctNum">0</span>%<span id="pctLabel">progress</span></div>
+      </div>
+
+      <div class="prog-bar-wrap">
+        <div class="prog-bar" id="progBar" style="width:0%"></div>
+      </div>
+      <div class="prog-message" id="progMsg">Starting up...</div>
+
+      <!-- Stats -->
+      <div class="stats-row" style="margin-top:28px">
+        <div class="stat-card">
+          <div class="stat-num" id="statFound">—</div>
+          <div class="stat-label">Businesses Found</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statLeads">—</div>
+          <div class="stat-label">Unique Leads</div>
+        </div>
+      </div>
+
+      <!-- Log terminal -->
+      <div class="log-card">
+        <div class="log-header">
+          <div class="log-dots"><div class="log-dot"></div><div class="log-dot"></div><div class="log-dot"></div></div>
+          <div class="log-title">scraper.log — live output</div>
+        </div>
+        <div class="log-body" id="logBody">
+          <div class="log-line">
+            <span class="log-time">--:--:--</span>
+            <span class="log-msg info">Waiting for job to start<span class="log-cursor"></span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Redirect overlay -->
+  <div class="redirect-overlay" id="redirectOverlay">
+    <div class="redirect-icon">🎉</div>
+    <div class="redirect-text">Analysis Complete!</div>
+    <div class="redirect-sub">Loading your results...</div>
+    <div class="redirect-bar"><div class="redirect-fill"></div></div>
+  </div>
+
+  <script>
+    const JOB_ID = '{{ job.job_id }}';
+    const STATUS_URL = `/api/job/${JOB_ID}/status/`;
+
+    const STATUS_TO_STEP = {
+      pending: 0, searching: 1, fetching: 2,
+      cleaning: 3, reading_cv: 4, analyzing: 5,
+      complete: 5, error: 0
+    };
+
+    let lastLogCount = 0;
+    let pollInterval = null;
+
+    function markStep(stepIdx) {
+      for (let i = 1; i <= 5; i++) {
+        const sc = document.getElementById(`sc-${i}`);
+        sc.classList.remove('active', 'done');
+        if (i < stepIdx) {
+          sc.classList.add('done');
+          sc.innerHTML = '<i class="fas fa-check"></i>';
+        } else if (i === stepIdx) {
+          sc.classList.add('active');
+          sc.textContent = i;
+        } else {
+          sc.textContent = i;
+        }
+
+        if (i < 5) {
+          const conn = document.getElementById(`conn-${i}`);
+          conn.classList.remove('done', 'active');
+          if (i < stepIdx) conn.classList.add('done');
+          else if (i === stepIdx) conn.classList.add('active');
+        }
+      }
+    }
+
+    function updateRing(pct) {
+      const circ = 427.3;
+      const offset = circ - (pct / 100) * circ;
+      document.getElementById('ringFill').style.strokeDashoffset = offset;
+      document.getElementById('pctNum').textContent = pct;
+    }
+
+    function appendLog(entries) {
+      const body = document.getElementById('logBody');
+      const newEntries = entries.slice(lastLogCount);
+      if (newEntries.length === 0) return;
+
+      newEntries.forEach(e => {
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        line.innerHTML = `<span class="log-time">${e.time}</span><span class="log-msg ${e.level || 'info'}">${e.msg}</span>`;
+        body.appendChild(line);
+      });
+      lastLogCount = entries.length;
+      body.scrollTop = body.scrollHeight;
+
+      // Remove cursor from previous last line
+      body.querySelectorAll('.log-cursor').forEach(c => c.remove());
+      // Add cursor to last line if still running
+      const last = body.lastElementChild?.querySelector('.log-msg');
+      if (last) last.insertAdjacentHTML('beforeend', '<span class="log-cursor"></span>');
+    }
+
+    async function poll() {
+      try {
+        const res = await fetch(STATUS_URL);
+        const data = await res.json();
+
+        // Update progress
+        const pct = data.progress || 0;
+        document.getElementById('progBar').style.width = pct + '%';
+        updateRing(pct);
+        if (data.message) document.getElementById('progMsg').textContent = data.message;
+
+        // Update steps
+        const step = STATUS_TO_STEP[data.status] || 0;
+        markStep(step);
+
+        // Update stats
+        if (data.total_found) document.getElementById('statFound').textContent = data.total_found;
+        if (data.total_leads) document.getElementById('statLeads').textContent = data.total_leads;
+
+        // Update badge
+        const badge = document.getElementById('statusBadge');
+        const statusText = document.getElementById('statusText');
+        if (data.status === 'complete') {
+          badge.classList.add('complete');
+          document.getElementById('spinner').outerHTML = '<i class="fas fa-check check"></i>';
+          statusText.textContent = 'Complete';
+        } else if (data.status === 'error') {
+          badge.classList.add('error');
+          statusText.textContent = 'Error';
+        } else {
+          const labels = { searching:'Searching Maps', fetching:'Fetching Details',
+            cleaning:'Cleaning Data', reading_cv:'Reading CV', analyzing:'AI Analysis' };
+          statusText.textContent = labels[data.status] || 'Processing';
+        }
+
+        // Update log
+        if (data.log && data.log.length > 0) appendLog(data.log);
+
+        // Redirect or stop
+        if (data.redirect_url) {
+          clearInterval(pollInterval);
+          document.getElementById('redirectOverlay').classList.add('show');
+          setTimeout(() => { window.location.href = data.redirect_url; }, 2200);
+        } else if (data.status === 'error') {
+          clearInterval(pollInterval);
+          // Remove cursor
+          document.querySelectorAll('.log-cursor').forEach(c => c.remove());
+        }
+
+      } catch (err) {
+        console.error('Poll error:', err);
+      }
+    }
+
+    // Start polling immediately
+    poll();
+    pollInterval = setInterval(poll, 1500);
+  </script>
+</body>
+</html>
