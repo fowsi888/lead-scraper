@@ -345,12 +345,12 @@ def run_scraper_job(job_id_str):
         update(63, f"Exported {len(df)} leads to CSV", extra={"csv_path": csv_export_path})
 
         # Step 4 — Read CV
-        update(65, "Reading and extracting text from your CV", "reading_cv")
+        update(65, "Reading your Business Profile / CV", "reading_cv")
         cv_text = read_cv(cv_path)
-        update(70, f"CV loaded: {len(cv_text):,} characters extracted")
+        update(70, f"Business Profile / CV loaded: {len(cv_text):,} characters extracted")
 
         # Step 5 — AI analysis
-        update(73, "Sending to OpenAI for CV-based matching analysis", "analyzing")
+        update(73, "AI agent is analysing your Business Profile / CV against each company...", "analyzing")
         analysis = analyse_with_ai(cv_text, df, openai_api_key)
 
         update(100, "Analysis complete! All done.", "complete",
