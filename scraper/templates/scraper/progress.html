@@ -251,7 +251,7 @@
         <div class="step-connector" id="conn-3"></div>
         <div class="step" id="step-4">
           <div class="step-circle" id="sc-4">4</div>
-          <div class="step-label">Read CV</div>
+          <div class="step-label">Read Profile / CV</div>
         </div>
         <div class="step-connector" id="conn-4"></div>
         <div class="step" id="step-5">
@@ -414,7 +414,7 @@
           statusText.textContent = 'Error';
         } else {
           const labels = { searching:'Searching Maps', fetching:'Fetching Details',
-            cleaning:'Cleaning Data', reading_cv:'Reading CV', analyzing:'AI Analysis' };
+            cleaning:'Cleaning Data', reading_cv:'Reading Profile / CV', analyzing:'AI Analysis' };
           statusText.textContent = labels[data.status] || 'Processing';
         }
 

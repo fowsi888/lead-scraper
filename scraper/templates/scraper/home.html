@@ -1,483 +1,883 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FOMAD Lead Scraper — AI-Powered Business Discovery</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #080c14;
-      --bg2: #0d1220;
-      --card: rgba(13,18,30,0.85);
-      --border: rgba(255,255,255,0.07);
-      --border-active: rgba(79,158,255,0.45);
-      --blue: #4f9eff;
-      --blue2: #2979ff;
-      --purple: #a78bfa;
-      --green: #34d399;
-      --orange: #fbbf24;
-      --red: #f87171;
-      --text: #e8edf5;
-      --muted: #64748b;
-      --muted2: #94a3b8;
-      --glow-blue: 0 0 40px rgba(79,158,255,0.25);
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-    /* Ambient glow blobs */
-    .blob {
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(80px);
-      pointer-events: none;
-      z-index: 0;
-    }
-    .blob-1 { width:500px;height:500px;background:rgba(79,158,255,0.06);top:-150px;left:-100px; }
-    .blob-2 { width:400px;height:400px;background:rgba(167,139,250,0.06);bottom:-100px;right:-80px; }
-    .blob-3 { width:300px;height:300px;background:rgba(52,211,153,0.04);top:50%;left:50%;transform:translate(-50%,-50%); }
-
-    /* Navbar */
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(8,12,20,0.85);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-      padding: 0 32px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-    }
-    .nav-inner {
-      max-width: 900px; margin: 0 auto; width: 100%;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .logo {
-      font-size: 20px; font-weight: 800;
-      background: linear-gradient(135deg, var(--blue), var(--purple));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      letter-spacing: -0.5px;
-    }
-    .logo span { color: var(--muted2); -webkit-text-fill-color: var(--muted2); font-weight: 400; font-size: 13px; margin-left: 8px; }
-    .nav-badge {
-      background: linear-gradient(135deg, rgba(79,158,255,0.15), rgba(167,139,250,0.15));
-      border: 1px solid rgba(79,158,255,0.25);
-      border-radius: 20px; padding: 4px 12px;
-      font-size: 11px; font-weight: 600; color: var(--blue);
-      letter-spacing: 1px; text-transform: uppercase;
-    }
-
-    /* Main */
-    main { position: relative; z-index: 1; padding: 0 24px 80px; }
-    .container { max-width: 860px; margin: 0 auto; }
-
-    /* Hero */
-    .hero { text-align: center; padding: 72px 0 52px; }
-    .hero-eyebrow {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: linear-gradient(135deg, rgba(79,158,255,0.12), rgba(167,139,250,0.12));
-      border: 1px solid rgba(79,158,255,0.2);
-      border-radius: 50px; padding: 6px 18px; margin-bottom: 28px;
-      font-size: 11px; font-weight: 700; letter-spacing: 2px;
-      text-transform: uppercase; color: var(--blue);
-    }
-    .hero-eyebrow .dot { width:6px;height:6px;background:var(--green);border-radius:50%;
-      animation: pulse-dot 2s ease-in-out infinite; }
-    @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
-
-    .hero-title {
-      font-size: clamp(36px, 6vw, 58px);
-      font-weight: 900; line-height: 1.08;
-      letter-spacing: -1.5px; margin-bottom: 20px;
-    }
-    .gradient-text {
-      background: linear-gradient(135deg, var(--blue), var(--purple), var(--blue));
-      background-size: 200% auto;
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      animation: gradient-shift 4s ease infinite;
-    }
-    @keyframes gradient-shift { 0%,100%{background-position:0%} 50%{background-position:100%} }
-
-    .hero-sub {
-      font-size: 17px; color: var(--muted2); max-width: 520px;
-      margin: 0 auto 32px; line-height: 1.65;
-    }
-    .pills {
-      display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
-    }
-    .pill {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: 50px; padding: 7px 16px;
-      font-size: 13px; color: var(--muted2);
-      transition: all 0.2s;
-    }
-    .pill:hover { border-color: var(--border-active); color: var(--text); }
-
-    /* Form Card */
-    .form-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 24px; padding: 44px;
-      backdrop-filter: blur(24px);
-      box-shadow: 0 32px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
-    }
-
-    /* Form sections */
-    .form-section { padding: 32px 0; border-bottom: 1px solid var(--border); }
-    .form-section:first-of-type { padding-top: 0; }
-    .form-section:last-of-type { border-bottom: none; padding-bottom: 0; }
-
-    .section-header {
-      display: flex; align-items: flex-start; gap: 16px; margin-bottom: 24px;
-    }
-    .step-num {
-      width: 40px; height: 40px; flex-shrink: 0;
-      background: linear-gradient(135deg, var(--blue2), var(--purple));
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 800; color: white;
-      box-shadow: 0 4px 16px rgba(79,158,255,0.3);
-    }
-    .section-header h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-    .section-header p { font-size: 13px; color: var(--muted2); }
-
-    /* Upload zone */
-    .upload-zone {
-      border: 2px dashed rgba(79,158,255,0.25);
-      border-radius: 14px; padding: 48px 24px;
-      text-align: center; cursor: pointer;
-      transition: all 0.3s ease; position: relative;
-    }
-    .upload-zone:hover { border-color: var(--blue); background: rgba(79,158,255,0.03); transform: translateY(-2px); }
-    .upload-zone.drag-over {
-      border-color: var(--blue); border-style: solid;
-      background: rgba(79,158,255,0.06);
-      box-shadow: var(--glow-blue);
-    }
-    .upload-zone.has-file {
-      border-color: var(--green); border-style: solid;
-      background: rgba(52,211,153,0.05);
-    }
-    .upload-icon {
-      font-size: 40px; margin-bottom: 16px;
-      background: linear-gradient(135deg, var(--blue), var(--purple));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    }
-    .upload-zone.has-file .upload-icon { color: var(--green); -webkit-text-fill-color: var(--green); }
-    .upload-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
-    .upload-sub { font-size: 13px; color: var(--muted2); }
-    .link-text { color: var(--blue); }
-    .file-name {
-      display: none; margin-top: 12px;
-      background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.2);
-      border-radius: 8px; padding: 8px 16px;
-      font-size: 13px; color: var(--green); font-weight: 500;
-    }
-    .upload-zone.has-file .file-name { display: inline-flex; align-items: center; gap: 8px; }
-
-    /* Form grid */
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    @media(max-width:640px) { .form-grid { grid-template-columns: 1fr; } }
-
-    .form-group { display: flex; flex-direction: column; gap: 8px; }
-    .form-label {
-      font-size: 12px; font-weight: 600; color: var(--muted2);
-      text-transform: uppercase; letter-spacing: 0.8px;
-      display: flex; align-items: center; gap: 6px;
-    }
-    .input-wrap { position: relative; }
-    .input-icon {
-      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-      color: var(--muted); font-size: 14px; pointer-events: none;
-    }
-    .form-input {
-      width: 100%;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: 10px; padding: 13px 14px 13px 40px;
-      color: var(--text); font-size: 15px; font-family: inherit;
-      transition: all 0.2s; outline: none;
-    }
-    .form-input:focus {
-      border-color: var(--blue);
-      background: rgba(79,158,255,0.05);
-      box-shadow: 0 0 0 3px rgba(79,158,255,0.1);
-    }
-    .form-input::placeholder { color: var(--muted); }
-
-    /* Range slider */
-    .slider-header { display: flex; justify-content: space-between; align-items: center; }
-    .slider-value {
-      font-size: 20px; font-weight: 800;
-      background: linear-gradient(135deg, var(--blue), var(--purple));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    }
-    .range-input {
-      -webkit-appearance: none;
-      width: 100%; height: 6px;
-      background: rgba(255,255,255,0.08);
-      border-radius: 3px; outline: none; margin: 14px 0 6px;
-      cursor: pointer;
-    }
-    .range-input::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 22px; height: 22px;
-      background: linear-gradient(135deg, var(--blue), var(--purple));
-      border-radius: 50%; cursor: pointer;
-      box-shadow: 0 0 12px rgba(79,158,255,0.5);
-      transition: box-shadow 0.2s;
-    }
-    .range-input::-webkit-slider-thumb:hover { box-shadow: 0 0 20px rgba(79,158,255,0.7); }
-    .range-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
-
-    /* Submit button */
-    .btn-submit {
-      width: 100%; margin-top: 36px; padding: 18px;
-      background: linear-gradient(135deg, var(--blue2), var(--purple));
-      border: none; border-radius: 14px;
-      color: white; font-size: 16px; font-weight: 700;
-      cursor: pointer; overflow: hidden; position: relative;
-      transition: all 0.3s ease; letter-spacing: 0.3px;
-      box-shadow: 0 8px 24px rgba(79,158,255,0.25);
-    }
-    .btn-submit:hover { transform: translateY(-3px); box-shadow: 0 16px 48px rgba(79,158,255,0.4); }
-    .btn-submit:active { transform: translateY(-1px); }
-    .btn-submit .shimmer {
-      position: absolute; top: 0; left: -100%;
-      width: 40%; height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
-      animation: shimmer 2.5s ease-in-out infinite;
-    }
-    @keyframes shimmer { to { left: 180%; } }
-    .btn-submit.loading { opacity: 0.75; pointer-events: none; }
-    .btn-inner { display: flex; align-items: center; justify-content: center; gap: 10px; position: relative; z-index: 1; }
-
-    /* Error alert */
-    .error-box {
-      background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.25);
-      border-radius: 12px; padding: 16px 20px; margin-bottom: 28px;
-    }
-    .error-box ul { padding-left: 20px; }
-    .error-box li { color: var(--red); font-size: 14px; margin-bottom: 4px; }
-  </style>
-</head>
-<body>
-  <div class="blob blob-1"></div>
-  <div class="blob blob-2"></div>
-  <div class="blob blob-3"></div>
-
-  <nav>
-    <div class="nav-inner">
-      <div class="logo">FOMAD Leads <span>by AI</span></div>
-      <div class="nav-badge">⚡ Powered by GPT-4o</div>
-    </div>
-  </nav>
-
-  <main>
-    <div class="container">
-      <!-- Hero -->
-      <div class="hero">
-        <div class="hero-eyebrow">
-          <div class="dot"></div> Live Business Intelligence
-        </div>
-        <h1 class="hero-title">
-          Find Your Best<br>
-          <span class="gradient-text">Business Leads</span>
-        </h1>
-        <p class="hero-sub">
-          Upload your CV, set your target, and watch AI scan Google Maps to find the companies that match your skills perfectly.
-        </p>
-        <div class="pills">
-          <span class="pill">🗺️ Google Maps</span>
-          <span class="pill">🤖 GPT-4o Analysis</span>
-          <span class="pill">📄 CV Matching</span>
-          <span class="pill">📊 Up to 60 Leads</span>
-          <span class="pill">📥 CSV Export</span>
-        </div>
-      </div>
-
-      <!-- Form -->
-      <div class="form-card">
-        {% if errors %}
-        <div class="error-box">
-          <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
-        </div>
-        {% endif %}
-
-        <form id="scrapeForm" action="{% url 'start_job' %}" method="post" enctype="multipart/form-data">
-          {% csrf_token %}
-
-          <!-- Step 1: Upload CV -->
-          <div class="form-section">
-            <div class="section-header">
-              <div class="step-num">01</div>
-              <div>
-                <h3>Upload Your CV</h3>
-                <p>Your experience defines the best matches — AI reads your skills from the PDF</p>
-              </div>
-            </div>
-
-            <div class="upload-zone" id="uploadZone">
-              <input type="file" id="cvInput" name="cv_file" accept=".pdf" required hidden>
-              <div class="upload-icon" id="uploadIcon"><i class="fas fa-file-pdf"></i></div>
-              <div class="upload-title" id="uploadTitle">Drop your CV here or <span class="link-text">browse files</span></div>
-              <div class="upload-sub" id="uploadSub">PDF only • Max 10 MB</div>
-              <div class="file-name" id="fileName"><i class="fas fa-check-circle"></i> <span id="fileNameText"></span></div>
-            </div>
-          </div>
-
-          <!-- Step 2: Search Config -->
-          <div class="form-section">
-            <div class="section-header">
-              <div class="step-num">02</div>
-              <div>
-                <h3>Configure Your Search</h3>
-                <p>Define what kind of businesses and where to search</p>
-              </div>
-            </div>
-
-            <div class="form-grid">
-              <div class="form-group">
-                <label class="form-label" for="searchTerm"><i class="fas fa-search"></i> Search Term</label>
-                <div class="input-wrap">
-                  <i class="input-icon fas fa-briefcase"></i>
-                  <input type="text" id="searchTerm" name="search_term" class="form-input"
-                         placeholder="e.g. digital marketing agency"
-                         value="{{ search_term|default:'digital marketing agency' }}" required>
-                </div>
-                <div style="font-size:11px;color:var(--muted2);margin-top:6px;line-height:1.6">
-                  💡 <strong style="-webkit-text-fill-color:var(--muted2)">Tip:</strong> Broader terms return more leads. <em>"digital marketing agency"</em>, <em>"software agency"</em>, <em>"IT consulting"</em> give 20–60 results. Very niche terms like <em>"AI automation"</em> may only have a handful of listings on Google Maps.
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="country"><i class="fas fa-globe"></i> Country</label>
-                <div class="input-wrap">
-                  <i class="input-icon fas fa-map-marker-alt"></i>
-                  <input type="text" id="country" name="country" class="form-input"
-                         list="countryList" placeholder="e.g. Finland"
-                         value="{{ country|default:'Finland' }}" required>
-                </div>
-                <datalist id="countryList">
-                  <option value="Afghanistan"><option value="Albania"><option value="Algeria">
-                  <option value="Australia"><option value="Austria"><option value="Belgium">
-                  <option value="Brazil"><option value="Canada"><option value="Chile">
-                  <option value="China"><option value="Colombia"><option value="Croatia">
-                  <option value="Czech Republic"><option value="Denmark"><option value="Egypt">
-                  <option value="Estonia"><option value="Finland"><option value="France">
-                  <option value="Germany"><option value="Greece"><option value="Hungary">
-                  <option value="India"><option value="Indonesia"><option value="Ireland">
-                  <option value="Israel"><option value="Italy"><option value="Japan">
-                  <option value="Kenya"><option value="Latvia"><option value="Lithuania">
-                  <option value="Luxembourg"><option value="Malaysia"><option value="Mexico">
-                  <option value="Netherlands"><option value="New Zealand"><option value="Nigeria">
-                  <option value="Norway"><option value="Pakistan"><option value="Peru">
-                  <option value="Philippines"><option value="Poland"><option value="Portugal">
-                  <option value="Romania"><option value="Russia"><option value="Saudi Arabia">
-                  <option value="Singapore"><option value="Slovakia"><option value="Slovenia">
-                  <option value="South Africa"><option value="South Korea"><option value="Spain">
-                  <option value="Sweden"><option value="Switzerland"><option value="Thailand">
-                  <option value="Turkey"><option value="UAE"><option value="UK">
-                  <option value="USA"><option value="Ukraine"><option value="Vietnam">
-                </datalist>
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 3: Options -->
-          <div class="form-section">
-            <div class="section-header">
-              <div class="step-num">03</div>
-              <div>
-                <h3>Search Depth</h3>
-                <p>How many businesses to find and analyse (more = slower but more leads)</p>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <div class="slider-header">
-                <label class="form-label"><i class="fas fa-sliders-h"></i> Maximum Results</label>
-                <div class="slider-value" id="sliderVal">60</div>
-              </div>
-              <input type="range" name="max_results" id="maxResults"
-                     min="5" max="60" value="60" class="range-input">
-              <div class="range-labels">
-                <span>5 (fast)</span>
-                <span>20</span>
-                <span>40</span>
-                <span>60 (thorough)</span>
-              </div>
-            </div>
-          </div>
-
-          <button type="submit" class="btn-submit" id="submitBtn">
-            <div class="shimmer"></div>
-            <div class="btn-inner">
-              <i class="fas fa-rocket"></i>
-              <span id="btnText">Start Scraping</span>
-            </div>
-          </button>
-        </form>
-      </div>
-    </div>
-  </main>
-
-  <script>
-    // Drag & drop upload
-    const zone = document.getElementById('uploadZone');
-    const input = document.getElementById('cvInput');
-
-    zone.addEventListener('click', () => input.click());
-
-    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
-    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-    zone.addEventListener('drop', e => {
-      e.preventDefault();
-      zone.classList.remove('drag-over');
-      const file = e.dataTransfer.files[0];
-      if (file) setFile(file);
-    });
-
-    input.addEventListener('change', () => {
-      if (input.files[0]) setFile(input.files[0]);
-    });
-
-    function setFile(file) {
-      if (!file.name.toLowerCase().endsWith('.pdf')) {
-        alert('Please upload a PDF file only.');
-        return;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FOMAD Lead Scraper — AI-Powered Business Discovery</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #080c14;
+        --bg2: #0d1220;
+        --card: rgba(13, 18, 30, 0.85);
+        --border: rgba(255, 255, 255, 0.07);
+        --border-active: rgba(79, 158, 255, 0.45);
+        --blue: #4f9eff;
+        --blue2: #2979ff;
+        --purple: #a78bfa;
+        --green: #34d399;
+        --orange: #fbbf24;
+        --red: #f87171;
+        --text: #e8edf5;
+        --muted: #64748b;
+        --muted2: #94a3b8;
+        --glow-blue: 0 0 40px rgba(79, 158, 255, 0.25);
       }
-      // Attach to the actual input
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      input.files = dt.files;
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Inter", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      /* Ambient glow blobs */
+      .blob {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(80px);
+        pointer-events: none;
+        z-index: 0;
+      }
+      .blob-1 {
+        width: 500px;
+        height: 500px;
+        background: rgba(79, 158, 255, 0.06);
+        top: -150px;
+        left: -100px;
+      }
+      .blob-2 {
+        width: 400px;
+        height: 400px;
+        background: rgba(167, 139, 250, 0.06);
+        bottom: -100px;
+        right: -80px;
+      }
+      .blob-3 {
+        width: 300px;
+        height: 300px;
+        background: rgba(52, 211, 153, 0.04);
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
 
-      zone.classList.add('has-file');
-      document.getElementById('uploadIcon').innerHTML = '<i class="fas fa-check-circle" style="color:var(--green);-webkit-text-fill-color:var(--green)"></i>';
-      document.getElementById('uploadTitle').textContent = 'CV uploaded successfully';
-      document.getElementById('uploadSub').textContent = 'Ready for analysis';
-      document.getElementById('fileNameText').textContent = file.name;
-    }
+      /* Navbar */
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: rgba(8, 12, 20, 0.85);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border);
+        padding: 0 32px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+      }
+      .nav-inner {
+        max-width: 900px;
+        margin: 0 auto;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .logo {
+        font-size: 20px;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--blue), var(--purple));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -0.5px;
+      }
+      .logo span {
+        color: var(--muted2);
+        -webkit-text-fill-color: var(--muted2);
+        font-weight: 400;
+        font-size: 13px;
+        margin-left: 8px;
+      }
+      .nav-badge {
+        background: linear-gradient(
+          135deg,
+          rgba(79, 158, 255, 0.15),
+          rgba(167, 139, 250, 0.15)
+        );
+        border: 1px solid rgba(79, 158, 255, 0.25);
+        border-radius: 20px;
+        padding: 4px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--blue);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
 
-    // Slider
-    const slider = document.getElementById('maxResults');
-    const valLabel = document.getElementById('sliderVal');
-    slider.addEventListener('input', () => valLabel.textContent = slider.value);
+      /* Main */
+      main {
+        position: relative;
+        z-index: 1;
+        padding: 0 24px 80px;
+      }
+      .container {
+        max-width: 860px;
+        margin: 0 auto;
+      }
 
-    // Submit loading state
-    document.getElementById('scrapeForm').addEventListener('submit', function() {
-      const btn = document.getElementById('submitBtn');
-      btn.classList.add('loading');
-      document.getElementById('btnText').textContent = 'Starting...';
-    });
-  </script>
-</body>
+      /* Hero */
+      .hero {
+        text-align: center;
+        padding: 72px 0 52px;
+      }
+      .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(
+          135deg,
+          rgba(79, 158, 255, 0.12),
+          rgba(167, 139, 250, 0.12)
+        );
+        border: 1px solid rgba(79, 158, 255, 0.2);
+        border-radius: 50px;
+        padding: 6px 18px;
+        margin-bottom: 28px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--blue);
+      }
+      .hero-eyebrow .dot {
+        width: 6px;
+        height: 6px;
+        background: var(--green);
+        border-radius: 50%;
+        animation: pulse-dot 2s ease-in-out infinite;
+      }
+      @keyframes pulse-dot {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.7);
+        }
+      }
+
+      .hero-title {
+        font-size: clamp(36px, 6vw, 58px);
+        font-weight: 900;
+        line-height: 1.08;
+        letter-spacing: -1.5px;
+        margin-bottom: 20px;
+      }
+      .gradient-text {
+        background: linear-gradient(
+          135deg,
+          var(--blue),
+          var(--purple),
+          var(--blue)
+        );
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: gradient-shift 4s ease infinite;
+      }
+      @keyframes gradient-shift {
+        0%,
+        100% {
+          background-position: 0%;
+        }
+        50% {
+          background-position: 100%;
+        }
+      }
+
+      .hero-sub {
+        font-size: 17px;
+        color: var(--muted2);
+        max-width: 520px;
+        margin: 0 auto 32px;
+        line-height: 1.65;
+      }
+      .pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+      }
+      .pill {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--border);
+        border-radius: 50px;
+        padding: 7px 16px;
+        font-size: 13px;
+        color: var(--muted2);
+        transition: all 0.2s;
+      }
+      .pill:hover {
+        border-color: var(--border-active);
+        color: var(--text);
+      }
+
+      /* Form Card */
+      .form-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 44px;
+        backdrop-filter: blur(24px);
+        box-shadow:
+          0 32px 80px rgba(0, 0, 0, 0.5),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+
+      /* Form sections */
+      .form-section {
+        padding: 32px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .form-section:first-of-type {
+        padding-top: 0;
+      }
+      .form-section:last-of-type {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .step-num {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        background: linear-gradient(135deg, var(--blue2), var(--purple));
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 800;
+        color: white;
+        box-shadow: 0 4px 16px rgba(79, 158, 255, 0.3);
+      }
+      .section-header h3 {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .section-header p {
+        font-size: 13px;
+        color: var(--muted2);
+      }
+
+      /* Upload zone */
+      .upload-zone {
+        border: 2px dashed rgba(79, 158, 255, 0.25);
+        border-radius: 14px;
+        padding: 48px 24px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+      .upload-zone:hover {
+        border-color: var(--blue);
+        background: rgba(79, 158, 255, 0.03);
+        transform: translateY(-2px);
+      }
+      .upload-zone.drag-over {
+        border-color: var(--blue);
+        border-style: solid;
+        background: rgba(79, 158, 255, 0.06);
+        box-shadow: var(--glow-blue);
+      }
+      .upload-zone.has-file {
+        border-color: var(--green);
+        border-style: solid;
+        background: rgba(52, 211, 153, 0.05);
+      }
+      .upload-icon {
+        font-size: 40px;
+        margin-bottom: 16px;
+        background: linear-gradient(135deg, var(--blue), var(--purple));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .upload-zone.has-file .upload-icon {
+        color: var(--green);
+        -webkit-text-fill-color: var(--green);
+      }
+      .upload-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .upload-sub {
+        font-size: 13px;
+        color: var(--muted2);
+      }
+      .link-text {
+        color: var(--blue);
+      }
+      .file-name {
+        display: none;
+        margin-top: 12px;
+        background: rgba(52, 211, 153, 0.1);
+        border: 1px solid rgba(52, 211, 153, 0.2);
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 13px;
+        color: var(--green);
+        font-weight: 500;
+      }
+      .upload-zone.has-file .file-name {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Form grid */
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      @media (max-width: 640px) {
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .form-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted2);
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .input-wrap {
+        position: relative;
+      }
+      .input-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        font-size: 14px;
+        pointer-events: none;
+      }
+      .form-input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 13px 14px 13px 40px;
+        color: var(--text);
+        font-size: 15px;
+        font-family: inherit;
+        transition: all 0.2s;
+        outline: none;
+      }
+      .form-input:focus {
+        border-color: var(--blue);
+        background: rgba(79, 158, 255, 0.05);
+        box-shadow: 0 0 0 3px rgba(79, 158, 255, 0.1);
+      }
+      .form-input::placeholder {
+        color: var(--muted);
+      }
+
+      /* Range slider */
+      .slider-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .slider-value {
+        font-size: 20px;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--blue), var(--purple));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .range-input {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 3px;
+        outline: none;
+        margin: 14px 0 6px;
+        cursor: pointer;
+      }
+      .range-input::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 22px;
+        height: 22px;
+        background: linear-gradient(135deg, var(--blue), var(--purple));
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 0 12px rgba(79, 158, 255, 0.5);
+        transition: box-shadow 0.2s;
+      }
+      .range-input::-webkit-slider-thumb:hover {
+        box-shadow: 0 0 20px rgba(79, 158, 255, 0.7);
+      }
+      .range-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      /* Submit button */
+      .btn-submit {
+        width: 100%;
+        margin-top: 36px;
+        padding: 18px;
+        background: linear-gradient(135deg, var(--blue2), var(--purple));
+        border: none;
+        border-radius: 14px;
+        color: white;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        overflow: hidden;
+        position: relative;
+        transition: all 0.3s ease;
+        letter-spacing: 0.3px;
+        box-shadow: 0 8px 24px rgba(79, 158, 255, 0.25);
+      }
+      .btn-submit:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 16px 48px rgba(79, 158, 255, 0.4);
+      }
+      .btn-submit:active {
+        transform: translateY(-1px);
+      }
+      .btn-submit .shimmer {
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 40%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.18),
+          transparent
+        );
+        animation: shimmer 2.5s ease-in-out infinite;
+      }
+      @keyframes shimmer {
+        to {
+          left: 180%;
+        }
+      }
+      .btn-submit.loading {
+        opacity: 0.75;
+        pointer-events: none;
+      }
+      .btn-inner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* Error alert */
+      .error-box {
+        background: rgba(248, 113, 113, 0.08);
+        border: 1px solid rgba(248, 113, 113, 0.25);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 28px;
+      }
+      .error-box ul {
+        padding-left: 20px;
+      }
+      .error-box li {
+        color: var(--red);
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <nav>
+      <div class="nav-inner">
+        <div class="logo">Lead Scraper <span>by AI</span></div>
+        <div class="nav-badge">⚡ Powered by FOMAD</div>
+      </div>
+    </nav>
+
+    <main>
+      <div class="container">
+        <!-- Hero -->
+        <div class="hero">
+          <div class="hero-eyebrow">
+            <div class="dot"></div>
+            Live Business Intelligence
+          </div>
+          <h1 class="hero-title">
+            Find Your Best<br />
+            <span class="gradient-text">Business Leads</span>
+          </h1>
+          <p class="hero-sub">
+            Upload your Business Profile / CV, set your target, and watch AI
+            scan Google Maps to find the companies that match your skills
+            perfectly.
+          </p>
+          <div class="pills">
+            <span class="pill">🗺️ Google Maps</span>
+            <span class="pill">🤖 GPT-4o Analysis</span>
+            <span class="pill">📄 Business Profile / CV Matching</span>
+            <span class="pill">📊 Up to 60 Leads</span>
+            <span class="pill">📥 CSV Export</span>
+          </div>
+        </div>
+
+        <!-- Form -->
+        <div class="form-card">
+          {% if errors %}
+          <div class="error-box">
+            <ul>
+              {% for e in errors %}
+              <li>{{ e }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          <form
+            id="scrapeForm"
+            action="{% url 'start_job' %}"
+            method="post"
+            enctype="multipart/form-data"
+          >
+            {% csrf_token %}
+
+            <!-- Step 1: Upload Business Profile / CV -->
+            <div class="form-section">
+              <div class="section-header">
+                <div class="step-num">01</div>
+                <div>
+                  <h3>Upload Your Business Profile / CV</h3>
+                  <p>
+                    Your profile defines the best matches — AI reads your skills
+                    from the PDF
+                  </p>
+                </div>
+              </div>
+
+              <div class="upload-zone" id="uploadZone">
+                <input
+                  type="file"
+                  id="cvInput"
+                  name="cv_file"
+                  accept=".pdf"
+                  required
+                  hidden
+                />
+                <div class="upload-icon" id="uploadIcon">
+                  <i class="fas fa-file-pdf"></i>
+                </div>
+                <div class="upload-title" id="uploadTitle">
+                  Drop your Business Profile / CV here or
+                  <span class="link-text">browse files</span>
+                </div>
+                <div class="upload-sub" id="uploadSub">
+                  PDF only • Max 10 MB
+                </div>
+                <div class="file-name" id="fileName">
+                  <i class="fas fa-check-circle"></i>
+                  <span id="fileNameText"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Search Config -->
+            <div class="form-section">
+              <div class="section-header">
+                <div class="step-num">02</div>
+                <div>
+                  <h3>Configure Your Search</h3>
+                  <p>Define what kind of businesses and where to search</p>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label" for="searchTerm"
+                    ><i class="fas fa-search"></i> Search Term</label
+                  >
+                  <div class="input-wrap">
+                    <i class="input-icon fas fa-briefcase"></i>
+                    <input
+                      type="text"
+                      id="searchTerm"
+                      name="search_term"
+                      class="form-input"
+                      placeholder="e.g. digital marketing agency"
+                      value="{{ search_term|default:'digital marketing agency' }}"
+                      required
+                    />
+                  </div>
+                  <div
+                    style="
+                      font-size: 11px;
+                      color: var(--muted2);
+                      margin-top: 6px;
+                      line-height: 1.6;
+                    "
+                  >
+                    💡
+                    <strong style="-webkit-text-fill-color: var(--muted2)"
+                      >Tip:</strong
+                    >
+                    Broader terms return more leads.
+                    <em>"digital marketing agency"</em>,
+                    <em>"software agency"</em>, <em>"IT consulting"</em> give
+                    20–60 results. Very niche terms like
+                    <em>"AI automation"</em> may only have a handful of listings
+                    on Google Maps.
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="country"
+                    ><i class="fas fa-globe"></i> Country</label
+                  >
+                  <div class="input-wrap">
+                    <i class="input-icon fas fa-map-marker-alt"></i>
+                    <input
+                      type="text"
+                      id="country"
+                      name="country"
+                      class="form-input"
+                      list="countryList"
+                      placeholder="e.g. Finland"
+                      value="{{ country|default:'Finland' }}"
+                      required
+                    />
+                  </div>
+                  <datalist id="countryList">
+                    <option value="Afghanistan"></option>
+                    <option value="Albania"></option>
+                    <option value="Algeria"></option>
+                    <option value="Australia"></option>
+                    <option value="Austria"></option>
+                    <option value="Belgium"></option>
+                    <option value="Brazil"></option>
+                    <option value="Canada"></option>
+                    <option value="Chile"></option>
+                    <option value="China"></option>
+                    <option value="Colombia"></option>
+                    <option value="Croatia"></option>
+                    <option value="Czech Republic"></option>
+                    <option value="Denmark"></option>
+                    <option value="Egypt"></option>
+                    <option value="Estonia"></option>
+                    <option value="Finland"></option>
+                    <option value="France"></option>
+                    <option value="Germany"></option>
+                    <option value="Greece"></option>
+                    <option value="Hungary"></option>
+                    <option value="India"></option>
+                    <option value="Indonesia"></option>
+                    <option value="Ireland"></option>
+                    <option value="Israel"></option>
+                    <option value="Italy"></option>
+                    <option value="Japan"></option>
+                    <option value="Kenya"></option>
+                    <option value="Latvia"></option>
+                    <option value="Lithuania"></option>
+                    <option value="Luxembourg"></option>
+                    <option value="Malaysia"></option>
+                    <option value="Mexico"></option>
+                    <option value="Netherlands"></option>
+                    <option value="New Zealand"></option>
+                    <option value="Nigeria"></option>
+                    <option value="Norway"></option>
+                    <option value="Pakistan"></option>
+                    <option value="Peru"></option>
+                    <option value="Philippines"></option>
+                    <option value="Poland"></option>
+                    <option value="Portugal"></option>
+                    <option value="Romania"></option>
+                    <option value="Russia"></option>
+                    <option value="Saudi Arabia"></option>
+                    <option value="Singapore"></option>
+                    <option value="Slovakia"></option>
+                    <option value="Slovenia"></option>
+                    <option value="South Africa"></option>
+                    <option value="South Korea"></option>
+                    <option value="Spain"></option>
+                    <option value="Sweden"></option>
+                    <option value="Switzerland"></option>
+                    <option value="Thailand"></option>
+                    <option value="Turkey"></option>
+                    <option value="UAE"></option>
+                    <option value="UK"></option>
+                    <option value="USA"></option>
+                    <option value="Ukraine"></option>
+                    <option value="Vietnam"></option>
+                  </datalist>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3: Options -->
+            <div class="form-section">
+              <div class="section-header">
+                <div class="step-num">03</div>
+                <div>
+                  <h3>Search Depth</h3>
+                  <p>
+                    How many businesses to find and analyse (more = slower but
+                    more leads)
+                  </p>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <div class="slider-header">
+                  <label class="form-label"
+                    ><i class="fas fa-sliders-h"></i> Maximum Results</label
+                  >
+                  <div class="slider-value" id="sliderVal">60</div>
+                </div>
+                <input
+                  type="range"
+                  name="max_results"
+                  id="maxResults"
+                  min="5"
+                  max="60"
+                  value="60"
+                  class="range-input"
+                />
+                <div class="range-labels">
+                  <span>5 (fast)</span>
+                  <span>20</span>
+                  <span>40</span>
+                  <span>60 (thorough)</span>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitBtn">
+              <div class="shimmer"></div>
+              <div class="btn-inner">
+                <i class="fas fa-rocket"></i>
+                <span id="btnText">Start Scraping</span>
+              </div>
+            </button>
+          </form>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // Drag & drop upload
+      const zone = document.getElementById("uploadZone");
+      const input = document.getElementById("cvInput");
+
+      zone.addEventListener("click", () => input.click());
+
+      zone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        zone.classList.add("drag-over");
+      });
+      zone.addEventListener("dragleave", () =>
+        zone.classList.remove("drag-over"),
+      );
+      zone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        zone.classList.remove("drag-over");
+        const file = e.dataTransfer.files[0];
+        if (file) setFile(file);
+      });
+
+      input.addEventListener("change", () => {
+        if (input.files[0]) setFile(input.files[0]);
+      });
+
+      function setFile(file) {
+        if (!file.name.toLowerCase().endsWith(".pdf")) {
+          alert("Please upload a PDF file only.");
+          return;
+        }
+        // Attach to the actual input
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+
+        zone.classList.add("has-file");
+        document.getElementById("uploadIcon").innerHTML =
+          '<i class="fas fa-check-circle" style="color:var(--green);-webkit-text-fill-color:var(--green)"></i>';
+        document.getElementById("uploadTitle").textContent =
+          "Business Profile / CV uploaded successfully";
+        document.getElementById("uploadSub").textContent = "Ready for analysis";
+        document.getElementById("fileNameText").textContent = file.name;
+      }
+
+      // Slider
+      const slider = document.getElementById("maxResults");
+      const valLabel = document.getElementById("sliderVal");
+      slider.addEventListener(
+        "input",
+        () => (valLabel.textContent = slider.value),
+      );
+
+      // Submit loading state
+      document
+        .getElementById("scrapeForm")
+        .addEventListener("submit", function () {
+          const btn = document.getElementById("submitBtn");
+          btn.classList.add("loading");
+          document.getElementById("btnText").textContent = "Starting...";
+        });
+    </script>
+  </body>
 </html>

@@ -65,14 +65,17 @@ Copy `.env.example` to `.env` and fill in:
 
 This tool uses the **Google Maps Places API** — a legitimate, paid API service — to retrieve publicly listed business information. It does **not** scrape or crawl Google's website in violation of their Terms of Service.
 
+It also uses the **OpenAI API** to generate AI-powered lead analysis. Use of this tool is subject to [OpenAI's usage policies](https://openai.com/policies/usage-policies).
+
 You are solely responsible for:
 
 - Complying with [Google Maps Platform Terms of Service](https://cloud.google.com/maps-platform/terms)
+- Complying with [OpenAI's Terms of Service](https://openai.com/policies/row-terms-of-service)
 - Ensuring your use of collected data respects applicable privacy laws (GDPR, CCPA, etc.)
 - Using outreach data ethically and lawfully in your region
 - Any business or legal outcomes resulting from your use of this tool
 
-This software is provided **for educational and automation purposes only**. The author makes no warranties and accepts no liability for how this tool is used.
+This software is provided **as-is for personal, commercial, and automation use**. The author makes no warranties and accepts no liability for how this tool is used.
 
 ---
 
@@ -95,5 +98,7 @@ This project is free to use under the **MIT License**. You can:
 - Modify the code
 - Distribute it
 - Sell services built with it
+
+**One requirement:** if you copy or distribute this code, you must include the original copyright notice and the `LICENSE` file.
 
 See [LICENSE](LICENSE) for the full text.
