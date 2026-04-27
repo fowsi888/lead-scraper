@@ -175,24 +175,25 @@ def results(request, job_id):
     # Outreach percentages for progress bars
     total = len(leads) or 1
     website_pct = round(with_website / total * 100)
-    phone_only_pct = round(with_phone_only / total * 100)
+    phone_pct = round(with_phone / total * 100)
     no_contact_pct = round(no_contact / total * 100)
+
+    # Top categories max value for CSS bar widths
+    top_cats_max = top_cats[0][1] if top_cats else 1
 
     return render(request, 'scraper/results.html', {
         'job': job,
         'leads': leads,
         'total_leads_display': total_leads_display,
         'ai_analysis_html': mark_safe(ai_html),
-        'category_labels': json.dumps([c[0] for c in top_cats]),
-        'category_values': json.dumps([c[1] for c in top_cats]),
-        'has_categories': bool(top_cats),
+        'top_cats': top_cats,
+        'top_cats_max': top_cats_max,
         'avg_rating': avg_rating,
         'with_website': with_website,
         'with_phone': with_phone,
-        'with_phone_only': with_phone_only,
         'no_contact': no_contact,
         'website_pct': website_pct,
-        'phone_only_pct': phone_only_pct,
+        'phone_pct': phone_pct,
         'no_contact_pct': no_contact_pct,
         'top_leads_preview': top_leads_preview,
         'avg_confidence': avg_confidence,
