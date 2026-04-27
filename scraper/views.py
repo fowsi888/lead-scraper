@@ -129,6 +129,9 @@ def results(request, job_id):
                                         'point of interest', 'local business'):
             categories[cat] += 1
     top_cats = categories.most_common(8)
+    # Fallback: if all categories are generic, use the search term as the label
+    if not top_cats and leads:
+        top_cats = [(job.search_term.title(), len(leads))]
 
     # Chart 3 + stats: outreach quality — use _str so NaN/None == no contact
     with_website = sum(1 for l in leads if _str(l.get('website')).startswith('http'))

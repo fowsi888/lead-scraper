@@ -287,11 +287,18 @@
             </div>
           </div>
 
-          <!-- Outreach quality donut (always has data) -->
+          <!-- Outreach quality donut -->
           <div class="chart-card">
             <div class="chart-head"><i class="fas fa-paper-plane" style="color:var(--green)"></i> Outreach Quality</div>
             <div class="chart-body">
-              <canvas id="outreachChart" height="200"></canvas>
+              {% if with_website or with_phone %}
+                <canvas id="outreachChart" height="200"></canvas>
+              {% else %}
+                <div class="empty-chart">
+                  <i class="fas fa-paper-plane"></i>
+                  <span>No contact details found for this search</span>
+                </div>
+              {% endif %}
             </div>
           </div>
 
@@ -449,7 +456,8 @@
     });
     {% endif %}
 
-    // Chart 2 — Outreach Quality (always rendered)
+    // Chart 2 — Outreach Quality
+    {% if with_website or with_phone %}
     new Chart(document.getElementById('outreachChart'), {
       type: 'doughnut',
       data: {
@@ -477,6 +485,7 @@
         }
       }
     });
+    {% endif %}
 
     // Chart 3 — Top Business Types (only rendered if has_categories)
     {% if has_categories %}
