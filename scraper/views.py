@@ -121,26 +121,9 @@ def results(request, job_id):
         bucket = max(0, min(int(r) - 1, 4))
         rating_buckets[bucket] += 1
 
-    # Chart 2: top business categories (empty string means generic → skip)
-    categories = Counter()
-    for lead in leads:
-        cat = _str(lead.get('category'))
-        if cat and cat.lower() not in ('', 'other', 'n/a', 'establishment',
-                                        'point of interest', 'local business'):
-            categories[cat] += 1
-    top_cats = categories.most_common(8)
-    # Fallback: if all categories are generic, use the search term as the label
-    if not top_cats and leads:
-        top_cats = [(job.search_term.title(), len(leads))]
-
-    # Chart 3 + stats: outreach quality — use _str so NaN/None == no contact
+    # Outreach stats
     with_website = sum(1 for l in leads if _str(l.get('website')).startswith('http'))
     with_phone = sum(1 for l in leads if _str(l.get('phone')))
-    with_phone_only = sum(
-        1 for l in leads
-        if _str(l.get('phone')) and not _str(l.get('website')).startswith('http')
-    )
-    no_contact = len(leads) - with_website - with_phone_only
 
     # Stats
     avg_rating = round(sum(ratings) / len(ratings), 1) if ratings else 0
@@ -172,30 +155,29 @@ def results(request, job_id):
 
     top_leads_preview = sorted(leads, key=_lead_sort)[:5]
 
+    # Ready to Contact — leads with both website and phone
+    ready_to_contact = [
+        l for l in leads
+        if _str(l.get('website')).startswith('http') and _str(l.get('phone'))
+    ][:5]
+
     # Outreach percentages for progress bars
     total = len(leads) or 1
     website_pct = round(with_website / total * 100)
     phone_pct = round(with_phone / total * 100)
-    no_contact_pct = round(no_contact / total * 100)
-
-    # Top categories max value for CSS bar widths
-    top_cats_max = top_cats[0][1] if top_cats else 1
 
     return render(request, 'scraper/results.html', {
         'job': job,
         'leads': leads,
         'total_leads_display': total_leads_display,
         'ai_analysis_html': mark_safe(ai_html),
-        'top_cats': top_cats,
-        'top_cats_max': top_cats_max,
         'avg_rating': avg_rating,
         'with_website': with_website,
         'with_phone': with_phone,
-        'no_contact': no_contact,
         'website_pct': website_pct,
         'phone_pct': phone_pct,
-        'no_contact_pct': no_contact_pct,
         'top_leads_preview': top_leads_preview,
+        'ready_to_contact': ready_to_contact,
         'avg_confidence': avg_confidence,
         'match_count': match_count,
     })

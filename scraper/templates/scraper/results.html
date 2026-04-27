@@ -324,7 +324,10 @@
 
           <!-- Top Leads Spotlight -->
           <div class="chart-card">
-            <div class="chart-head"><i class="fas fa-trophy" style="color:var(--orange)"></i> Top Leads</div>
+            <div class="chart-head">
+              <span><i class="fas fa-trophy" style="color:var(--orange)"></i> Top Leads</span>
+              <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:auto;">Sorted by Google Maps rating</span>
+            </div>
             <div class="chart-body">
               {% for lead in top_leads_preview %}
               <div class="top-lead">
@@ -347,21 +350,32 @@
             </div>
           </div>
 
-          <!-- Top Business Types -->
+          <!-- Ready to Contact -->
           <div class="chart-card">
-            <div class="chart-head"><i class="fas fa-tags" style="color:var(--blue)"></i> Top Business Types</div>
+            <div class="chart-head">
+              <span><i class="fas fa-bolt" style="color:var(--green)"></i> Ready to Contact</span>
+              <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:auto;">Has website + phone</span>
+            </div>
             <div class="chart-body">
-              {% for label, value in top_cats %}
-              <div class="breakdown-item">
-                <div class="breakdown-label">
-                  <span style="color:var(--text)">{{ label }}</span>
-                  <span class="breakdown-count">{{ value }}</span>
+              {% if ready_to_contact %}
+                {% for lead in ready_to_contact %}
+                <div class="top-lead">
+                  <div class="top-lead-name">{{ lead.name }}</div>
+                  <div class="top-lead-meta">
+                    {% if lead.rating %}
+                      <span class="rating-badge {% if lead.rating >= 4.5 %}r-high{% elif lead.rating >= 3.5 %}r-mid{% else %}r-low{% endif %}">★ {{ lead.rating }}</span>
+                    {% endif %}
+                    <a href="{{ lead.website }}" target="_blank" rel="noopener" style="color:var(--blue);font-size:12px;text-decoration:none;"><i class="fas fa-external-link-alt"></i></a>
+                    <a href="tel:{{ lead.phone }}" title="{{ lead.phone }}" style="color:var(--green);font-size:12px;text-decoration:none;"><i class="fas fa-phone"></i></a>
+                  </div>
                 </div>
-                <div class="breakdown-track">
-                  <div class="breakdown-fill" style="width:{% widthratio value top_cats_max 100 %}%;background:linear-gradient(90deg,var(--blue2),var(--purple));"></div>
+                {% endfor %}
+              {% else %}
+                <div class="empty-chart">
+                  <i class="fas fa-bolt"></i>
+                  <span>No leads with both website and phone found</span>
                 </div>
-              </div>
-              {% endfor %}
+              {% endif %}
             </div>
           </div>
 
