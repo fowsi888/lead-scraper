@@ -155,11 +155,11 @@ def results(request, job_id):
 
     top_leads_preview = sorted(leads, key=_lead_sort)[:5]
 
-    # Ready to Contact — leads with both website and phone
-    ready_to_contact = [
-        l for l in leads
-        if _str(l.get('website')).startswith('http') and _str(l.get('phone'))
-    ][:5]
+    # Ready to Contact — leads with both website and phone, sorted by rating
+    ready_to_contact = sorted(
+        [l for l in leads if _str(l.get('website')).startswith('http') and _str(l.get('phone'))],
+        key=_lead_sort
+    )[:5]
 
     # Outreach percentages for progress bars
     total = len(leads) or 1
