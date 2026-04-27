@@ -196,6 +196,32 @@
       padding:40px 20px;color:var(--muted);gap:10px;font-size:13px;
     }
     .empty-chart i { font-size:28px;opacity:0.25; }
+
+    /* Outreach breakdown bars */
+    .breakdown-item { margin-bottom:18px; }
+    .breakdown-item:last-child { margin-bottom:0; }
+    .breakdown-label {
+      display:flex;justify-content:space-between;align-items:center;
+      font-size:13px;color:var(--muted2);margin-bottom:7px;
+    }
+    .breakdown-label span:first-child { display:flex;align-items:center;gap:7px; }
+    .breakdown-count { font-weight:700;color:var(--text);font-size:13px; }
+    .breakdown-track {
+      background:rgba(255,255,255,0.05);border-radius:6px;height:8px;overflow:hidden;
+    }
+    .breakdown-fill { height:8px;border-radius:6px;transition:width 1s ease; }
+
+    /* Top leads spotlight */
+    .top-lead {
+      display:flex;align-items:center;justify-content:space-between;
+      padding:11px 0;border-bottom:1px solid var(--border);gap:10px;
+    }
+    .top-lead:last-child { border-bottom:none;padding-bottom:0; }
+    .top-lead-name { font-size:13px;font-weight:500;color:var(--text);flex:1;min-width:0;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .top-lead-meta { display:flex;align-items:center;gap:8px;flex-shrink:0; }
+    .top-lead-meta a { color:var(--blue);font-size:12px;text-decoration:none; }
+    .top-lead-meta a:hover { text-decoration:underline; }
   </style>
 </head>
 <body>
@@ -272,33 +298,62 @@
         <!-- Charts column -->
         <div class="charts-col">
 
-          <!-- Rating donut -->
+          <!-- Outreach breakdown bars -->
           <div class="chart-card">
-            <div class="chart-head"><i class="fas fa-star" style="color:var(--orange)"></i> Rating Distribution</div>
-            <div class="chart-body" style="position:relative">
-              {% if has_ratings %}
-                <canvas id="ratingChart" height="220"></canvas>
-              {% else %}
-                <div class="empty-chart">
-                  <i class="fas fa-star-half-alt"></i>
-                  <span>No rating data for this search</span>
+            <div class="chart-head"><i class="fas fa-signal" style="color:var(--green)"></i> Outreach Breakdown</div>
+            <div class="chart-body">
+              <div class="breakdown-item">
+                <div class="breakdown-label">
+                  <span><i class="fas fa-globe" style="color:var(--blue)"></i> Has Website</span>
+                  <span class="breakdown-count">{{ with_website }}</span>
                 </div>
-              {% endif %}
+                <div class="breakdown-track">
+                  <div class="breakdown-fill" style="width:{{ website_pct }}%;background:var(--blue);"></div>
+                </div>
+              </div>
+              <div class="breakdown-item">
+                <div class="breakdown-label">
+                  <span><i class="fas fa-phone" style="color:var(--green)"></i> Phone Only</span>
+                  <span class="breakdown-count">{{ with_phone_only }}</span>
+                </div>
+                <div class="breakdown-track">
+                  <div class="breakdown-fill" style="width:{{ phone_only_pct }}%;background:var(--green);"></div>
+                </div>
+              </div>
+              <div class="breakdown-item">
+                <div class="breakdown-label">
+                  <span><i class="fas fa-times-circle" style="color:var(--muted)"></i> No Contact</span>
+                  <span class="breakdown-count">{{ no_contact }}</span>
+                </div>
+                <div class="breakdown-track">
+                  <div class="breakdown-fill" style="width:{{ no_contact_pct }}%;background:var(--muted);"></div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Outreach quality donut -->
+          <!-- Top Leads Spotlight -->
           <div class="chart-card">
-            <div class="chart-head"><i class="fas fa-paper-plane" style="color:var(--green)"></i> Outreach Quality</div>
+            <div class="chart-head"><i class="fas fa-trophy" style="color:var(--orange)"></i> Top Leads</div>
             <div class="chart-body">
-              {% if with_website or with_phone %}
-                <canvas id="outreachChart" height="200"></canvas>
-              {% else %}
-                <div class="empty-chart">
-                  <i class="fas fa-paper-plane"></i>
-                  <span>No contact details found for this search</span>
+              {% for lead in top_leads_preview %}
+              <div class="top-lead">
+                <div class="top-lead-name">{{ lead.name }}</div>
+                <div class="top-lead-meta">
+                  {% if lead.rating %}
+                    <span class="rating-badge {% if lead.rating >= 4.5 %}r-high{% elif lead.rating >= 3.5 %}r-mid{% else %}r-low{% endif %}">
+                      ★ {{ lead.rating }}
+                    </span>
+                  {% endif %}
+                  {% if lead.website %}
+                    <a href="{{ lead.website }}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i></a>
+                  {% endif %}
+                  {% if lead.phone %}
+                    <span style="color:var(--green);font-size:12px;" title="{{ lead.phone }}"><i class="fas fa-phone"></i></span>
+                  {% endif %}
                 </div>
-              {% endif %}
+              </div>
+              {% endfor %}
             </div>
           </div>
 
@@ -413,81 +468,9 @@
       }, 30);
     });
 
-    const chartDefaults = {
-      color: '#94a3b8',
-      borderColor: 'rgba(255,255,255,0.04)',
-    };
-    if (typeof Chart === 'undefined') {
-      document.querySelectorAll('canvas').forEach(c => {
-        const wrap = c.closest('.chart-body');
-        if (wrap) { wrap.innerHTML = '<div class="empty-chart"><i class="fas fa-chart-pie"></i><span>Charts unavailable (offline)</span></div>'; }
-      });
-    } else {
-    Chart.defaults.color = chartDefaults.color;
-
-    // Chart 1 — Rating Distribution (only rendered if has_ratings)
-    {% if has_ratings %}
-    new Chart(document.getElementById('ratingChart'), {
-      type: 'doughnut',
-      data: {
-        labels: ['1 ★', '2 ★', '3 ★', '4 ★', '5 ★'],
-        datasets: [{
-          data: {{ rating_counts }},
-          backgroundColor: ['#f87171','#fb923c','#fbbf24','#34d399','#22d3ee'],
-          borderColor: 'rgba(8,12,20,0.9)',
-          borderWidth: 3,
-          hoverOffset: 8,
-        }]
-      },
-      options: {
-        cutout: '65%',
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: { color:'#94a3b8', padding:14, font:{size:11}, usePointStyle:true, pointStyleWidth:8 }
-          },
-          tooltip: {
-            callbacks: {
-              label: ctx => ` ${ctx.parsed} businesses (${ctx.label})`
-            }
-          }
-        }
-      }
-    });
-    {% endif %}
-
-    // Chart 2 — Outreach Quality
-    {% if with_website or with_phone %}
-    new Chart(document.getElementById('outreachChart'), {
-      type: 'doughnut',
-      data: {
-        labels: ['Has Website', 'Phone Only', 'No Contact'],
-        datasets: [{
-          data: {{ outreach_data }},
-          backgroundColor: ['#34d399','#4f9eff','#f87171'],
-          borderColor: 'rgba(8,12,20,0.9)',
-          borderWidth: 3,
-          hoverOffset: 8,
-        }]
-      },
-      options: {
-        cutout: '65%',
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: { color:'#94a3b8', padding:14, font:{size:11}, usePointStyle:true, pointStyleWidth:8 }
-          },
-          tooltip: {
-            callbacks: {
-              label: ctx => ` ${ctx.parsed} businesses`
-            }
-          }
-        }
-      }
-    });
-    {% endif %}
-
-    // Chart 3 — Top Business Types (only rendered if has_categories)
+    // Top Business Types chart (only rendered if has_categories)
+    if (typeof Chart !== 'undefined') {
+    Chart.defaults.color = '#94a3b8';
     {% if has_categories %}
     new Chart(document.getElementById('catChart'), {
       type: 'bar',
@@ -524,6 +507,7 @@
     });
     {% endif %}
     } // end Chart.js guard
+
 
     // Table search
     document.getElementById('tableSearch').addEventListener('input', function() {

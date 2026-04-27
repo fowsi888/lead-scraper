@@ -161,20 +161,40 @@ def results(request, job_id):
     avg_confidence = round(sum(scores) / len(scores), 1) if scores else 0
     match_count = len(scores)
 
+    # Top 5 leads for spotlight card — best rated first, then website presence
+    def _lead_sort(lead):
+        try:
+            r = float(_str(lead.get('rating'))) if _str(lead.get('rating')) else 0
+        except ValueError:
+            r = 0
+        has_web = 1 if _str(lead.get('website')).startswith('http') else 0
+        return (-r, -has_web)
+
+    top_leads_preview = sorted(leads, key=_lead_sort)[:5]
+
+    # Outreach percentages for progress bars
+    total = len(leads) or 1
+    website_pct = round(with_website / total * 100)
+    phone_only_pct = round(with_phone_only / total * 100)
+    no_contact_pct = round(no_contact / total * 100)
+
     return render(request, 'scraper/results.html', {
         'job': job,
         'leads': leads,
         'total_leads_display': total_leads_display,
         'ai_analysis_html': mark_safe(ai_html),
-        'rating_counts': json.dumps(rating_buckets),
-        'has_ratings': any(v > 0 for v in rating_buckets),
         'category_labels': json.dumps([c[0] for c in top_cats]),
         'category_values': json.dumps([c[1] for c in top_cats]),
         'has_categories': bool(top_cats),
-        'outreach_data': json.dumps([with_website, with_phone_only, no_contact]),
         'avg_rating': avg_rating,
         'with_website': with_website,
         'with_phone': with_phone,
+        'with_phone_only': with_phone_only,
+        'no_contact': no_contact,
+        'website_pct': website_pct,
+        'phone_only_pct': phone_only_pct,
+        'no_contact_pct': no_contact_pct,
+        'top_leads_preview': top_leads_preview,
         'avg_confidence': avg_confidence,
         'match_count': match_count,
     })
