@@ -348,7 +348,7 @@
                     <a href="{{ lead.website }}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i></a>
                   {% endif %}
                   {% if lead.phone %}
-                    <span style="color:var(--green);font-size:12px;" title="{{ lead.phone }}"><i class="fas fa-phone"></i></span>
+                    <a href="tel:{{ lead.phone }}" title="{{ lead.phone }}" style="color:var(--green);font-size:12px;text-decoration:none;"><i class="fas fa-phone"></i></a>
                   {% endif %}
                 </div>
               </div>
