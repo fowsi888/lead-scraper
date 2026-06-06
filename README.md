@@ -82,7 +82,6 @@ This software is provided **as-is for personal, commercial, and automation use**
 ## 📞 Contact & Support
 
 **Website:** [fomad.net](https://fomad.net)  
-**YouTube:** [FOMAD](https://youtube.com/@FOMAD)  
 **Email:** [info@fomad.net](mailto:info@fomad.net)
 
 Found a bug or have a feature request? Open an issue on GitHub or reach out via email.
